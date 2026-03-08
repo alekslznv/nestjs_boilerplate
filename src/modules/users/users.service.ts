@@ -4,7 +4,7 @@ import { plainToInstance } from 'class-transformer';
 import { UserResponseDto } from './dto/user-response.dto';
 
 @Injectable()
-export class UserService {
+export class UsersService {
   constructor(private readonly dbService: PrismaService) {}
 
   async findAll(): Promise<UserResponseDto[]> {
