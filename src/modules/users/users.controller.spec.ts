@@ -5,6 +5,7 @@ import { UserResponseDto } from './dto/user-response.dto';
 
 const mockUserService = {
   findAll: jest.fn(),
+  findOne: jest.fn(),
 };
 
 describe('UsersController', () => {
@@ -35,7 +36,7 @@ describe('UsersController', () => {
   });
 
   describe('GET / (findAll)', () => {
-    it('should return an array of users', async () => {
+    it('returns an array of users', async () => {
       const mockUsers: UserResponseDto[] = [
         {
           id: 1,
@@ -68,15 +69,35 @@ describe('UsersController', () => {
       expect(result).toEqual([]);
       expect(userService.findAll).toHaveBeenCalledTimes(1);
     });
+  });
 
-    it('should propagate errors thrown by UserService', async () => {
-      const error = new Error('Database connection failed');
-      mockUserService.findAll.mockRejectedValue(error);
+  describe('GET /:id (findOne)', () => {
+    const mockUser: UserResponseDto = {
+      id: 1,
+      name: 'Alice',
+      email: 'alice@example.com',
+      createdAt: '2026-03-07T19:41:14.688Z',
+      updatedAt: '2026-03-07T19:41:14.688Z',
+    };
 
-      await expect(controller.findAll()).rejects.toThrow(
-        'Database connection failed',
-      );
-      expect(userService.findAll).toHaveBeenCalledTimes(1);
+    it('returns a user', async () => {
+      mockUserService.findOne.mockResolvedValue(mockUser);
+
+      const result = await controller.findOne(1);
+
+      expect(result).toEqual(mockUser);
+      expect(userService.findOne).toHaveBeenCalledWith(1);
+      expect(userService.findOne).toHaveBeenCalledTimes(1);
+    });
+
+    describe('when user not found', () => {
+      it('throws an error', async () => {
+        const error = new Error('No User found');
+        mockUserService.findOne.mockRejectedValue(error);
+
+        await expect(controller.findOne(999)).rejects.toThrow('No User found');
+        expect(userService.findOne).toHaveBeenCalledWith(999);
+      });
     });
   });
 });

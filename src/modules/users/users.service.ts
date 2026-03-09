@@ -12,4 +12,12 @@ export class UsersService {
 
     return plainToInstance(UserResponseDto, users);
   }
+
+  async findOne(id: number): Promise<UserResponseDto> {
+    const user = await this.dbService.db.user.findUniqueOrThrow({
+      where: { id },
+    });
+
+    return plainToInstance(UserResponseDto, user);
+  }
 }
