@@ -13,7 +13,8 @@ export class UniqueConstraintHandler implements PrismaErrorHandler {
     error: Prisma.PrismaClientKnownRequestError,
     response: Response,
   ): void {
-    const fields = (error.meta?.target as string[])?.join(', ') ?? 'field';
+    const fields =
+      error.message.match(/fields:\s*\(`([^`]+)`\)/)?.[1] ?? 'unknown field';
     response.status(HttpStatus.CONFLICT).json({
       statusCode: HttpStatus.CONFLICT,
       message: `Unique constraint violation on: ${fields}`,
