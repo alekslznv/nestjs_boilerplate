@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { plainToInstance } from 'class-transformer';
+import { PrismaService } from '../prisma/prisma.service';
 import { UserResponseDto } from './dto/user-response.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +17,14 @@ export class UsersService {
   async findOne(id: number): Promise<UserResponseDto> {
     const user = await this.dbService.db.user.findUniqueOrThrow({
       where: { id },
+    });
+
+    return plainToInstance(UserResponseDto, user);
+  }
+
+  async createOne(createUserDto: CreateUserDto): Promise<UserResponseDto> {
+    const user = await this.dbService.db.user.create({
+      data: createUserDto,
     });
 
     return plainToInstance(UserResponseDto, user);
