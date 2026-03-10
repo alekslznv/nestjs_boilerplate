@@ -3,6 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserResponseDto } from './dto/user-response.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -28,5 +29,17 @@ export class UsersService {
     });
 
     return plainToInstance(UserResponseDto, user);
+  }
+
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    const result = await this.dbService.db.user.update({
+      where: { id },
+      data: { ...updateUserDto },
+    });
+
+    return plainToInstance(UserResponseDto, result);
   }
 }
