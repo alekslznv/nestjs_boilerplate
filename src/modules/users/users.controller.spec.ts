@@ -10,6 +10,7 @@ const mockUserService = {
   findOne: jest.fn(),
   createOne: jest.fn(),
   update: jest.fn(),
+  remove: jest.fn(),
 };
 
 describe('UsersController', () => {
@@ -186,6 +187,27 @@ describe('UsersController', () => {
           'Unique constraint violation',
         );
         expect(userService.createOne).toHaveBeenCalledWith(createUserDto);
+      });
+    });
+  });
+
+  describe('DELETE /:id (remove)', () => {
+    it('deletes the user with provided :id', async () => {
+      mockUserService.remove.mockResolvedValue(undefined);
+
+      await controller.remove(1);
+
+      expect(userService.remove).toHaveBeenCalledWith(1);
+      expect(userService.remove).toHaveBeenCalledTimes(1);
+    });
+
+    describe('when user not found', () => {
+      it('does not throw when user does not exist', async () => {
+        mockUserService.remove.mockResolvedValue(undefined);
+
+        await controller.remove(999);
+
+        expect(userService.remove).toHaveBeenCalledWith(999);
       });
     });
   });
