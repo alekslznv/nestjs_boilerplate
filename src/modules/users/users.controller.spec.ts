@@ -3,11 +3,13 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { UserResponseDto } from './dto/user-response.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 const mockUserService = {
   findAll: jest.fn(),
   findOne: jest.fn(),
   createOne: jest.fn(),
+  update: jest.fn(),
 };
 
 describe('UsersController', () => {
@@ -99,6 +101,54 @@ describe('UsersController', () => {
 
         await expect(controller.findOne(999)).rejects.toThrow('No User found');
         expect(userService.findOne).toHaveBeenCalledWith(999);
+      });
+    });
+  });
+
+  describe('PATCH /:id (update)', () => {
+    const updateUserDto: UpdateUserDto = { name: 'Alice Updated' };
+
+    const mockUpdatedUser: UserResponseDto = {
+      id: 1,
+      name: 'Alice Updated',
+      email: 'alice@example.com',
+      createdAt: '2026-03-07T19:41:14.688Z',
+      updatedAt: '2026-03-07T19:41:14.688Z',
+    };
+
+    it('returns the updated user', async () => {
+      mockUserService.update.mockResolvedValue(mockUpdatedUser);
+
+      const result = await controller.update(1, updateUserDto);
+
+      expect(result).toEqual(mockUpdatedUser);
+      expect(userService.update).toHaveBeenCalledWith(1, updateUserDto);
+      expect(userService.update).toHaveBeenCalledTimes(1);
+    });
+
+    it('updates only the provided fields', async () => {
+      const partialDto: UpdateUserDto = { email: 'newalice@example.com' };
+      const mockPartialUpdate: UserResponseDto = {
+        ...mockUpdatedUser,
+        email: 'newalice@example.com',
+      };
+      mockUserService.update.mockResolvedValue(mockPartialUpdate);
+
+      const result = await controller.update(1, partialDto);
+
+      expect(result).toEqual(mockPartialUpdate);
+      expect(userService.update).toHaveBeenCalledWith(1, partialDto);
+    });
+
+    describe('when user not found', () => {
+      it('throws an error', async () => {
+        const error = new Error('No User found');
+        mockUserService.update.mockRejectedValue(error);
+
+        await expect(controller.update(999, updateUserDto)).rejects.toThrow(
+          'No User found',
+        );
+        expect(userService.update).toHaveBeenCalledWith(999, updateUserDto);
       });
     });
   });
