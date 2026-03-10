@@ -42,4 +42,10 @@ export class UsersService {
 
     return plainToInstance(UserResponseDto, result);
   }
+
+  async remove(id: number): Promise<void> {
+    await this.dbService.db.user.deleteMany({
+      where: { id },
+    });
+  }
 }
