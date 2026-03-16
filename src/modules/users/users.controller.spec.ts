@@ -2,13 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { UserResponseDto } from './dto/user-response.dto';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 const mockUserService = {
   findAll: jest.fn(),
   findOne: jest.fn(),
-  createOne: jest.fn(),
   update: jest.fn(),
   remove: jest.fn(),
 };
@@ -47,15 +45,15 @@ describe('UsersController', () => {
           id: 1,
           name: 'Alice',
           email: 'alice@example.com',
-          createdAt: '2026-03-07T19:41:14.688Z',
-          updatedAt: '2026-03-07T19:41:14.688Z',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
         {
           id: 2,
           name: 'Bob',
           email: 'bob@example.com',
-          createdAt: '2026-03-07T19:41:14.688Z',
-          updatedAt: '2026-03-07T19:41:14.688Z',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ];
       mockUserService.findAll.mockResolvedValue(mockUsers);
@@ -81,8 +79,8 @@ describe('UsersController', () => {
       id: 1,
       name: 'Alice',
       email: 'alice@example.com',
-      createdAt: '2026-03-07T19:41:14.688Z',
-      updatedAt: '2026-03-07T19:41:14.688Z',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     it('returns a user', async () => {
@@ -113,8 +111,8 @@ describe('UsersController', () => {
       id: 1,
       name: 'Alice Updated',
       email: 'alice@example.com',
-      createdAt: '2026-03-07T19:41:14.688Z',
-      updatedAt: '2026-03-07T19:41:14.688Z',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     it('returns the updated user', async () => {
@@ -150,43 +148,6 @@ describe('UsersController', () => {
           'No User found',
         );
         expect(userService.update).toHaveBeenCalledWith(999, updateUserDto);
-      });
-    });
-  });
-
-  describe('POST / (create)', () => {
-    const createUserDto: CreateUserDto = {
-      name: 'Alice',
-      email: 'alice@example.com',
-    };
-
-    const mockCreatedUser: UserResponseDto = {
-      id: 1,
-      name: 'Alice',
-      email: 'alice@example.com',
-      createdAt: '2026-03-07T19:41:14.688Z',
-      updatedAt: '2026-03-07T19:41:14.688Z',
-    };
-
-    it('returns the created user', async () => {
-      mockUserService.createOne.mockResolvedValue(mockCreatedUser);
-
-      const result = await controller.create(createUserDto);
-
-      expect(result).toEqual(mockCreatedUser);
-      expect(userService.createOne).toHaveBeenCalledWith(createUserDto);
-      expect(userService.createOne).toHaveBeenCalledTimes(1);
-    });
-
-    describe('when creation fails', () => {
-      it('throws an error', async () => {
-        const error = new Error('Unique constraint violation');
-        mockUserService.createOne.mockRejectedValue(error);
-
-        await expect(controller.create(createUserDto)).rejects.toThrow(
-          'Unique constraint violation',
-        );
-        expect(userService.createOne).toHaveBeenCalledWith(createUserDto);
       });
     });
   });
