@@ -9,6 +9,7 @@ A production-ready REST API boilerplate built with NestJS, Prisma, and PostgreSQ
 - **Language**: TypeScript 5.7 (strict mode)
 - **Database**: PostgreSQL 17
 - **ORM**: Prisma 7
+- **Auth**: JWT (access + refresh tokens), Passport, argon2
 - **Validation**: class-validator + class-transformer
 - **Testing**: Jest 30
 - **Linting**: ESLint 9 (flat config) + Prettier
@@ -22,13 +23,23 @@ src/
 ├── main.ts                        # App bootstrap, global pipes & versioning
 ├── app.module.ts                  # Root module
 ├── common/
+│   ├── decorators/                # @CurrentUser() parameter decorator
 │   ├── dto/                       # Shared DTOs (BaseResponseDto)
 │   ├── filters/                   # Global exception filter
 │   │   └── handlers/              # Prisma error handlers (P2002, P2025)
-│   └── interfaces/                # Shared interfaces
+│   ├── interfaces/                # Shared interfaces
+│   └── types/                     # Branded types (Argon2Hash)
 └── modules/
+    ├── auth/                      # Authentication module
+    │   ├── dto/                   # TokenPairDto, UpdateTokensDto
+    │   ├── guards/                # JwtAuthGuard
+    │   ├── providers/             # Separate JWT providers (access + refresh)
+    │   ├── strategies/            # LocalStrategy, JwtStrategy
+    │   ├── auth.controller.ts
+    │   ├── auth.service.ts
+    │   └── auth.service.spec.ts
     ├── prisma/                    # Database connection module
-    └── users/                     # Users CRUD module
+    └── users/                     # Users CRUD module (JWT-protected)
         ├── dto/                   # Create, Update, Response DTOs
         ├── users.controller.ts
         ├── users.service.ts
@@ -44,13 +55,27 @@ prisma/
 
 All endpoints are versioned under `/v1`.
 
+### Auth (public)
+
+| Method | Endpoint         | Description             | Status |
+|--------|------------------|-------------------------|--------|
+| `POST` | `/auth/signup`   | Register a new user     | 201    |
+| `POST` | `/auth/signin`   | Login, returns tokens   | 200    |
+| `POST` | `/auth/refresh`  | Refresh token pair      | 200    |
+| `POST` | `/auth/logout`   | Invalidate refresh token| 204    |
+
+`/auth/logout` requires a valid JWT. All other auth routes are public.
+
+### Users (JWT-protected)
+
 | Method   | Endpoint      | Description    | Status |
 |----------|---------------|----------------|--------|
 | `GET`    | `/users`      | List all users | 200    |
 | `GET`    | `/users/:id`  | Get user by ID | 200    |
-| `POST`   | `/users`      | Create a user  | 201    |
 | `PATCH`  | `/users/:id`  | Update a user  | 200    |
 | `DELETE` | `/users/:id`  | Delete a user  | 204    |
+
+All `/users` endpoints require `Authorization: Bearer <accessToken>` header.
 
 ### Error Handling
 
@@ -59,6 +84,16 @@ All endpoints are versioned under `/v1`.
 | P2002        | 409 Conflict        |
 | P2025        | 404 Not Found       |
 | Other        | 500 Internal Server |
+
+### Authentication Flow
+
+1. **Sign up** — `POST /auth/signup` with `{ email, name, password, role }`. Password is hashed with argon2.
+2. **Sign in** — `POST /auth/signin` with `{ email, password }`. Returns `{ accessToken, refreshToken }`.
+3. **Access protected routes** — pass `Authorization: Bearer <accessToken>` header. Access tokens expire in 15 minutes.
+4. **Refresh tokens** — `POST /auth/refresh` with `{ refreshToken }`. Returns a new token pair. Refresh tokens expire in 7 days.
+5. **Logout** — `POST /auth/logout` with a valid JWT. Invalidates the refresh token.
+
+Refresh tokens are hashed with argon2 and stored in the database. Access and refresh tokens use separate JWT secrets.
 
 ## Getting Started
 
@@ -84,7 +119,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Edit `.env` with your database credentials:
+Edit `.env` with your database credentials and JWT secrets:
 
 ```ini
 DATABASE_HOST=localhost
@@ -92,7 +127,12 @@ DATABASE_PORT=5432
 DATABASE_USER=admin
 DATABASE_PASSWORD=admin
 DATABASE_NAME=nestjs_boilerplate
+
+JWT_SECRET=<your-256-bit-secret>
+JWT_REFRESH_SECRET=<your-256-bit-secret>
 ```
+
+Generate secure secrets with: `openssl rand -hex 64`
 
 1. **Run migrations and seed**
 

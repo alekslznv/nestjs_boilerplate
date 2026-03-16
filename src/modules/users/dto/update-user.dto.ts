@@ -1,6 +1,6 @@
 import { PartialType, PickType } from '@nestjs/mapped-types';
-import { UserDto } from './user.dto';
+import { CreateUserDto } from './create-user.dto';
 
 export class UpdateUserDto extends PartialType(
-  PickType(UserDto, ['email', 'name'] as const),
+  PickType(CreateUserDto, ['email', 'name', 'password'] as const),
 ) {}
